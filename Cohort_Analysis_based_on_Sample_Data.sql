@@ -4,10 +4,10 @@
 
 #product data exploration
 SELECT * FROM
-	products LIMIT 5;
+products LIMIT 5;
     
 SELECT distinct productLine
-		FROM products ;
+FROM products ;
 	
 /*Classic Cars
 Motorcycles
@@ -19,14 +19,16 @@ Vintage Cars*/
 
 ## 1. select first order date by customer (since there's no registration date column)
 SELECT a.orderDate as first_order_date,
-			 a.customerNumber
+       a.customerNumber
 FROM orders a
-JOIN (SELECT customerNumber,
-					MIN(orderDate) as min_orderDate                  
-						FROM orders
-							GROUP BY 1) b
-		ON a.customerNumber = b.customerNumber
-		AND a.orderDate = b.min_orderDate;
+INNER JOIN (
+	    SELECT customerNumber,
+	    MIN(orderDate) as min_orderDate                  
+	    FROM orders
+	    GROUP BY 1
+	    ) b
+  ON a.customerNumber = b.customerNumber
+ AND a.orderDate = b.min_orderDate;
                     
                     /*) */            
 ## 2. Select data we need from each table: order_id, order_date, customer_id, first_order_date (first purchase), and country (cohort)
@@ -40,17 +42,19 @@ FROM orders a
 INNER JOIN customers b 
 ON a.customerNumber = b.customerNumber
 INNER JOIN (
-						SELECT a.orderDate as First_Order_Date,
-									 a.customerNumber
-							FROM orders a
-							JOIN (SELECT customerNumber,
-										MIN(orderDate) as min_orderDate                  
-										FROM orders
-										GROUP BY 1) b
-										ON a.customerNumber = b.customerNumber
-										AND a.orderDate = b.min_orderDate
-						) c 
-			ON a.customerNumber = c.customerNumber ;
+		SELECT a.orderDate as First_Order_Date,
+		       a.customerNumber
+		FROM orders a
+		INNER JOIN (
+					  SELECT customerNumber,
+					  MIN(orderDate) as min_orderDate                  
+					  FROM orders
+					  GROUP BY 1
+				    ) b
+		ON a.customerNumber = b.customerNumber
+		AND a.orderDate = b.min_orderDate
+	    ) c 
+ON a.customerNumber = c.customerNumber ;
                             
 ## 3. Find out how long it takes a user to order again after their first order              
 SELECT
@@ -64,72 +68,79 @@ FROM orders a
 INNER JOIN customers b 
 ON a.customerNumber = b.customerNumber
 INNER JOIN (
-						SELECT a.orderDate as First_Order_Date,
-									 a.customerNumber
-						FROM orders a
-						JOIN (SELECT customerNumber,
-												MIN(orderDate) as min_orderDate                  
-												FROM orders
-												GROUP BY 1) b
-											ON a.customerNumber = b.customerNumber
-											AND a.orderDate = b.min_orderDate
-									) c 
-	ON a.customerNumber = c.customerNumber
-								WHERE PERIOD_DIFF(DATE_FORMAT(a.orderDate, '%Y%m'), DATE_FORMAT(c.First_Order_Date, '%Y%m')) != 0
-								ORDER BY 4 ASC;          
+	    SELECT a.orderDate as First_Order_Date,
+	           a.customerNumber
+	    FROM orders a
+	    INNER JOIN (
+			SELECT customerNumber,
+			MIN(orderDate) as min_orderDate                  
+			FROM orders
+			GROUP BY 1
+			) b
+	    ON a.customerNumber = b.customerNumber
+	    AND a.orderDate = b.min_orderDate
+		) c 
+ON a.customerNumber = c.customerNumber
+WHERE PERIOD_DIFF(DATE_FORMAT(a.orderDate, '%Y%m'), DATE_FORMAT(c.First_Order_Date, '%Y%m')) != 0
+ORDER BY 4 ASC;          
 
 ### test select (can remove)
 SELECT
-      a.orderNumber AS 'Order_ID',
-      a.orderDate AS 'Order_Date',
-      b.customerNumber AS 'Customer_ID',
-      c.First_Order_Date as 'First_Order_Date',
-      AVG(PERIOD_DIFF(DATE_FORMAT(a.orderDate, '%Y%m'), DATE_FORMAT(c.First_Order_Date, '%Y%m'))) as 'AVG_Difference_in_Months', b.country AS 'Country'
+	a.orderNumber AS 'Order_ID',
+	a.orderDate AS 'Order_Date',
+	b.customerNumber AS 'Customer_ID',
+	c.First_Order_Date as 'First_Order_Date',
+	AVG(PERIOD_DIFF(DATE_FORMAT(a.orderDate, '%Y%m'), DATE_FORMAT(c.First_Order_Date, '%Y%m'))) as 'AVG_Difference_in_Months',
+	b.country AS 'Country'
 FROM orders a
 INNER JOIN customers b 
 ON a.customerNumber = b.customerNumber
 INNER JOIN (
-						SELECT a.orderDate as First_Order_Date,
-									 a.customerNumber
-									FROM orders a
-									JOIN (SELECT customerNumber,
-											MIN(orderDate) as min_orderDate                  
-												FROM orders
-												GROUP BY 1) b
-											ON a.customerNumber = b.customerNumber
-											AND a.orderDate = b.min_orderDate
-											) c 
-			ON a.customerNumber = c.customerNumber
-										WHERE PERIOD_DIFF(DATE_FORMAT(a.orderDate, '%Y%m'), DATE_FORMAT(c.First_Order_Date, '%Y%m')) != 0
-										GROUP BY 1,2,3,4,6
-										ORDER BY 4,6 ASC;          
+		SELECT a.orderDate as First_Order_Date,
+		       a.customerNumber
+		 FROM orders a
+		 INNER JOIN (
+				 SELECT customerNumber,
+				 MIN(orderDate) as min_orderDate                  
+				 FROM orders
+				 GROUP BY 1
+			    ) b
+		 ON a.customerNumber = b.customerNumber
+		 AND a.orderDate = b.min_orderDate
+	    ) c 
+ON a.customerNumber = c.customerNumber
+WHERE PERIOD_DIFF(DATE_FORMAT(a.orderDate, '%Y%m'), DATE_FORMAT(c.First_Order_Date, '%Y%m')) != 0
+GROUP BY 1,2,3,4,6
+ORDER BY 4,6 ASC;          
                             
 ## 4. Let's trim the above data - this gives us the average difference in time from first order to next orders and total orders, both by country
 ## This gives us the final output for visualization.
 
 SELECT
-	  AVG(PERIOD_DIFF(DATE_FORMAT(a.orderDate, '%Y%m'), DATE_FORMAT(c.First_Order_Date, '%Y%m'))) as 'AVG_Difference_in_Months',
-    b.country AS 'Country',
-    COUNT(DISTINCT a.orderNumber) AS 'Order_Count'
+      AVG(PERIOD_DIFF(DATE_FORMAT(a.orderDate, '%Y%m'), DATE_FORMAT(c.First_Order_Date, '%Y%m'))) as 'AVG_Difference_in_Months',
+      b.country AS 'Country',
+      COUNT(DISTINCT a.orderNumber) AS 'Order_Count'
 FROM orders a
 INNER JOIN customers b 
 ON a.customerNumber = b.customerNumber
 INNER JOIN (
-						SELECT a.orderDate as First_Order_Date,
-							     a.customerNumber
-						  FROM orders a
-							JOIN (SELECT customerNumber,
-											MIN(orderDate) as min_orderDate                  
-										FROM orders
-										GROUP BY 1) b
-								ON a.customerNumber = b.customerNumber
-							 AND a.orderDate = b.min_orderDate
-						) c 
-				ON a.customerNumber = c.customerNumber 
-     WHERE PERIOD_DIFF(DATE_FORMAT(a.orderDate, '%Y%m'), DATE_FORMAT(c.First_Order_Date, '%Y%m')) != 0
-		 GROUP BY 2
-		ORDER BY 3 DESC;
-																																		 
+		SELECT a.orderDate as First_Order_Date,
+		       a.customerNumber
+		FROM orders a
+		INNER JOIN (
+				SELECT customerNumber,
+				MIN(orderDate) as min_orderDate                  
+				FROM orders
+				GROUP BY 1
+			    ) b
+		ON a.customerNumber = b.customerNumber
+		AND a.orderDate = b.min_orderDate
+	     ) c 
+ON a.customerNumber = c.customerNumber 
+WHERE PERIOD_DIFF(DATE_FORMAT(a.orderDate, '%Y%m'), DATE_FORMAT(c.First_Order_Date, '%Y%m')) != 0
+GROUP BY 2
+ORDER BY 3 DESC
+;          
 12.6267	USA	75
 17.1290	Spain	31
 11.9600	France	25
@@ -158,24 +169,23 @@ SELECT
       DATE_FORMAT(a.orderDate, '%Y%m') as orderDate,
       DATE_FORMAT(c.First_Order_Date, '%Y%m') as first_orderDate,
       b.country AS 'Country'
-
 FROM orders a
 INNER JOIN customers b 
 ON a.customerNumber = b.customerNumber
 INNER JOIN (
-						SELECT a.orderDate as First_Order_Date,
-								 a.customerNumber
-						FROM orders a
-						JOIN (SELECT customerNumber,
-												MIN(orderDate) as min_orderDate                  
-									FROM orders
-									GROUP BY 1) b
-							ON a.customerNumber = b.customerNumber
-							AND a.orderDate = b.min_orderDate
-						) c 
-	ON a.customerNumber = c.customerNumber 
-	WHERE PERIOD_DIFF(DATE_FORMAT(a.orderDate, '%Y%m'), DATE_FORMAT(c.First_Order_Date, '%Y%m')) != 0
-	ORDER BY 4 DESC;          
-								
-                            
-										
+            SELECT a.orderDate as First_Order_Date,
+                   a.customerNumber
+	    FROM orders a
+            INNER JOIN (
+			SELECT customerNumber,
+			MIN(orderDate) as min_orderDate                  
+			FROM orders
+			GROUP BY 1
+			) b
+		ON a.customerNumber = b.customerNumber
+		AND a.orderDate = b.min_orderDate
+           ) c 
+ON a.customerNumber = c.customerNumber 
+WHERE PERIOD_DIFF(DATE_FORMAT(a.orderDate, '%Y%m'), DATE_FORMAT(c.First_Order_Date, '%Y%m')) != 0
+ORDER BY 4 DESC
+;       
