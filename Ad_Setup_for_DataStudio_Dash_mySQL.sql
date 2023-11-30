@@ -1,5 +1,5 @@
 /** Goal: Gather Type A and Type B Ad setup data from several tables, to union into one view.
-/** This was used a source script for a Data Studio dashboard I built.
+/** This was used as a source script for a Data Studio dashboard I built.
 
 /* Ads type A - Part 1 of Union */
 (SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(a.source, "/",-2),"/",1) as BID, 
@@ -54,6 +54,6 @@ UNION ALL
     				ON a.id=b.pid
           JOIN database.table_1 c
             ON b.cid=c.id
-    							 WHERE DATE_SUB(CURDATE(),INTERVAL 90 DAY) <= a.updated						                           
+          WHERE DATE_SUB(CURDATE(),INTERVAL 90 DAY) <= a.updated						                           
                                 )                            
                                 ORDER BY 2 DESC ;
